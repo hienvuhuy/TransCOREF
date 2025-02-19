@@ -1,0 +1,84 @@
+# @package _group_
+
+hydra:
+    run:
+        dir: .
+
+common:
+    fp16: false
+    user_dir: path_to_project/TransCOREF
+dataset:
+    num_workers: 2
+    batch_size: 16
+
+    valid_subset: valid
+    combine_valid_subsets: null
+    fixed_validation_seed: 7489
+ 
+optimization:
+    clip_norm: 0.0
+    lr: 
+        - 7e-5
+    update_freq: [16] # = 8/num_of_gpu
+    stop_min_lr: 1e-09 
+    max_epoch: 55
+
+checkpoint:
+    # no_epoch_checkpoints: true
+    write_checkpoints_asynchronously: false
+    
+    save_dir: /usr/luan_home/Workspace/Projects/chpts/replicate/TransCOREF/en-fr
+    
+    save_interval_updates: 0
+    keep_interval_updates: -1
+    maximize_best_checkpoint_metric: true
+    keep_last_epochs: 20
+    
+
+
+model:
+    _name: transformer_coref_probing
+    activation_fn: "relu"
+    share_decoder_input_output_embed: true
+    dropout: 0.1
+    attention_dropout: 0.1
+    activation_dropout: 0.1
+    relu_dropout: 0.1
+
+task:
+    _name: translation_with_coref
+    data: path_to_dataset/Dataset/multi-lingual-bin/outputen_fr/bin
+    load_source_coref: true
+    coref_cluster_path: path_to_dataset/Dataset/multi-lingual-bin/outputen_fr/cluster_with_bpe
+
+    # configuration settings for coref training
+    max_clusters: 19 
+    max_items_in_cluster: 53
+    # max_tokens_in_cluster: 65
+    
+    eval_bleu: true
+    eval_bleu_remove_bpe: '@@ '
+    eval_bleu_args: '{"beam": 4, "lenpen": 0.6}'
+    eval_bleu_detok: 'space'
+    coref_validation_devset: true
+    # eval_bleu_last: true
+    # force: true
+criterion:
+    _name: label_smoothed_cross_entropy_with_coref
+    label_smoothing: 0.1
+    translation_weight: 1.0
+    coref_weight: 4.0
+
+
+optimizer:
+    _name: adam
+    adam_betas: "(0.9,0.98)"
+    adam_eps: "1e-9"
+    weight_decay: 0.0
+
+lr_scheduler:
+    _name: inverse_sqrt
+    warmup_updates: 16000
+    warmup_init_lr: 1e-7
+
+
